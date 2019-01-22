@@ -14,25 +14,17 @@
         </div>
       </div>
     </div>
-    <div v-if="componentList" class="component__wrap">
-      <p>组件列表</p>
+    <template v-if="recordsList">
+      <p>记录列表</p>
       <div
-        v-for="(item, i) in componentList"
-        :key="i"
-        class="component__item"
-        @click="putComponent(item)"
+        class="template__item"
+        v-for="item in recordsList"
+        :key="item.id"
+        @click="editRecord(item)"
       >
-        {{ item.name }}
+        <p>name: {{ item.name }} / dir_name: {{ item.dir_name }}</p>
       </div>
-    </div>
-    <iframe
-      class="template__preview"
-      v-if="serverUrl"
-      :src="serverUrl"
-      frameborder="0"
-    />
-    <p><a href="javascript:" @click.stop="kill">结束server进程</a></p>
-    <p><a href="javascript:" @click="lookProcess">查看当前存活进程</a></p>
+    </template>
   </div>
 </template>
 
@@ -45,82 +37,40 @@ export default {
   data () {
     return {
       templateList: null,
-      componentList: null,
-      serverPid: 0,
-      serverUrl: null,
-      projectName: null
-    }
-  },
-
-  sockets: {
-    connect () {
-      this.$socket.emit('chat', 'hello egg')
-    },
-    operatorLog (val) {
-      this.$parent.messageArr.push(val)
-      if (typeof val === 'object' && val.result) {
-        switch (val.name) {
-          case 'prepareTemplate': {
-            this.serverPid = val.result.serverPid
-            this.serverUrl = val.result.url
-            // server 启动后 拉取组件列表
-            this.$http.get('getComponents', { projectName: this.projectName }).then(res => {
-              this.componentList = res.data
-            })
-          } break
-          case 'killServer': {
-            console.log('111')
-          } break
-        }
-      }
+      recordsList: null
     }
   },
 
   async created () {
     // 写cookie
-    document.cookie = 'userId=1'
-    await this.$http.get('initCookie', { userId: 1 })
+    const records = await this.$http.get('getRecords')
+    this.recordsList = records.data
 
-    this.$http.get('getTemplate').then(res => {
-      this.templateList = res.data
-    })
-  },
-
-  mounted () {
+    const templates = await this.$http.get('getTemplate')
+    this.templateList = templates.data
   },
 
   methods: {
-    socket (fnName, params) {
-      this.$socket.emit('chat', [fnName, params])
+    editRecord (item) {
+      // this.socket('prepareTemplate', {
+      //   templateId: item.template_id,
+      //   projectName: item.dir_name,
+      //   // pid: this.serverPid,
+      //   recordId: item.id
+      // })
+      this.$router.push(`/create/record/${item.id}/${item.dir_name}`)
     },
 
-    kill () {
-      this.socket('killServer', this.serverPid)
-    },
-
-    lookProcess () {
-      this.socket('lookProcess', this.projectName)
-    },
-
-    selectTemplate (item) {
+    selectTemplate (templateItem) {
       const dirName = prompt('输入项目名称，字母数字')
       if (!dirName) {
         return
       }
       if (/^[a-zA-Z0-9]+$/.test(dirName)) {
-        this.projectName = dirName
-        this.socket('prepareTemplate', {
-          templateId: item.id,
-          projectName: dirName,
-          pid: this.serverPid
-        })
+        this.$router.push(`/create/template/${templateItem.id}/${dirName}`)
       } else {
         alert('只能输入字母数字')
       }
-    },
-
-    putComponent (item) {
-      this.socket('putComponent', item)
     }
   }
 }
@@ -128,7 +78,7 @@ export default {
 
 <style lang="stylus">
   .home
-    width 65%
+    width 70%
     height 100%
     text-align center
   .template
@@ -139,11 +89,5 @@ export default {
       margin 0 auto
       flex-direction column
     &__item
-      border 1px #eee solid
-    &__preview
-      display block
-      width 320px
-      height 480px
-      margin 0 auto
       border 1px #eee solid
 </style>

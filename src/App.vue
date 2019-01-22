@@ -40,6 +40,9 @@ body
   margin: 0
   font-size 14px
 
+div
+  box-sizing border-box
+
 #app
   display flex
   justify-content space-between
@@ -48,13 +51,14 @@ body
   color #2c3e50
 
 .message
-  width 35%
+  width 30%
   // flex-basis 400px
   overflow: auto
-  padding 10px 10px 40px 10px
+  padding 10px
   background-color #333
   color #fff
   height 100%
   &__end
+    margin-top 40px
     height 30px
 </style>

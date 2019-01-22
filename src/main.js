@@ -16,7 +16,8 @@ Vue.prototype.$http = new Http({
     initCookie: '/',
     getTemplate: '/templates',
     prepareTemplate: '/prepareTemplate',
-    getComponents: '/components'
+    getComponents: '/components',
+    getRecords: '/records'
   },
   timeout: 600000
 })
