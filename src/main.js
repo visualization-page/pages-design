@@ -4,6 +4,7 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import Http from 'xm-mui/lib/http'
+import './plugins/element.js'
 
 Vue.use(new VueSocketio({
   // debug: true,

@@ -14,7 +14,7 @@
           </div>
         </div>
 
-        <p><a href="javascript:" @click.stop="kill">结束server进程</a></p>
+        <!--<p><a href="javascript:" @click.stop="kill">结束server进程</a></p>-->
         <p><a href="javascript:" @click="lookProcess">查看当前存活进程</a></p>
         <button @click="publish">打包发布</button>
       </div>
@@ -56,6 +56,7 @@
 
 <script>
 import JSONEditor from '@json-editor/json-editor'
+import { SOCKET } from '../constant'
 
 export default {
   name: 'create',
@@ -74,6 +75,10 @@ export default {
   computed: {
     isCreate () {
       return this.$route.params.type === 'template' // record
+    },
+
+    dirName () {
+      return this.$route.params.dirName
     }
   },
 
@@ -92,7 +97,7 @@ export default {
 
   sockets: {
     connect () {
-      this.$socket.emit('chat', 'hello egg')
+      this.$socket.emit('chat', [SOCKET.INIT])
     },
     operatorLog (val) {
       this.$parent.messageArr.push(val)
@@ -101,22 +106,19 @@ export default {
       }
       if (typeof val === 'object' && val.result) {
         switch (val.name) {
-          case 'prepareTemplate':
+          case SOCKET.PREPARE_TEMPLATE:
             this.afterMakeTemplate(val.result)
             break
-          case 'projectInfo':
+          case SOCKET.PROJECT_INFO:
             this.handleProjectInfo(val.result)
             break
-          case 'killServer':
-            console.log('111')
-            break
-          case 'putComponent':
+          case SOCKET.PUT_COMPONENT:
             this.afterPutComponent(val.result)
             break
-          case 'delComponents':
+          case SOCKET.DEL_COMPONENT:
             this.afterDelComponents(val.result)
             break
-          case 'updateComponents':
+          case SOCKET.UPDATE_COMPONENT:
             this.afterUpdateComponents(val.result)
             break
         }
@@ -125,38 +127,42 @@ export default {
   },
 
   created () {
+    this.getComponents()
     if (this.isCreate) {
       this.makeTemplate()
     } else {
-      this.socket('projectInfo', this.$route.params.dirName)
+      this.getProjectInfo()
     }
   },
 
-  mounted () {
-  },
-
   methods: {
-    publish () {
-      this.socket('publish', this.$route.params.dirName)
-    },
-
     socket (fnName, params) {
       this.$socket.emit('chat', [fnName, params])
     },
 
-    kill () {
-      this.socket('killServer', { pid: this.serverPid, dirName: this.$route.params.dirName })
+    publish () {
+      this.socket(SOCKET.PUBLISH, this.dirName)
     },
 
     lookProcess () {
-      this.socket('lookProcess', this.$route.params.dirName)
+      this.socket(SOCKET.LOOK_PROCESS, this.dirName)
+    },
+
+    getProjectInfo () {
+      this.socket(SOCKET.PROJECT_INFO, this.dirName)
+    },
+
+    handleProjectInfo ({ components, url }) {
+      this.templateComponents = components
+      this.serverUrl = url
     },
 
     makeTemplate () {
       const { id, dirName } = this.$route.params
-      this.socket('prepareTemplate', {
+      this.socket(SOCKET.PREPARE_TEMPLATE, {
         [this.isCreate ? 'templateId' : 'recordId']: id,
-        projectName: dirName
+        projectName: dirName,
+        siteName: '站名'
       })
     },
 
@@ -167,30 +173,15 @@ export default {
         const { dirName } = this.$route.params
         this.$router.replace(`/create/record/${recordId}/${dirName}`)
       }
-      this.getComponents()
     },
 
     getComponents () {
-      const { dirName } = this.$route.params
-      this.$http.get('getComponents', { dirName }).then(res => {
+      this.$http.get('getComponents', { dirName: this.dirName }).then(res => {
         this.componentList = res.data
       })
     },
 
-    handleProjectInfo (data) {
-      if (data.pid) {
-        this.serverPid = data.pid
-        this.serverUrl = data.url
-        this.getComponents()
-      } else {
-        this.makeTemplate()
-      }
-
-      this.templateComponents = data.components
-    },
-
     showSchema (item) {
-      // item.schema.properties
       Object.keys(item.props).forEach(key => {
         item.schema.properties[key].default = item.props[key]
       })
@@ -202,19 +193,20 @@ export default {
     },
 
     putComponent (item) {
-      this.socket('putComponent', { item, dirName: this.$route.params.dirName })
+      this.socket(SOCKET.PUT_COMPONENT, { item, dirName: this.dirName })
     },
 
-    afterPutComponent () {
-      this.socket('projectInfo', this.$route.params.dirName)
+    afterPutComponent (item) {
+      this.templateComponents.push(item)
       this.refreshIframe()
     },
 
     saveEditor () {
-      const value = this.editorInstance.getValue()
-      const { dirName } = this.$route.params
-
-      this.socket('updateComponents', { dirName, props: value, componentId: this.selectedComponent.id })
+      this.socket(SOCKET.UPDATE_COMPONENT, {
+        dirName: this.dirName,
+        props: this.editorInstance.getValue(),
+        componentId: this.selectedComponent.id
+      })
     },
 
     afterUpdateComponents () {
@@ -222,8 +214,7 @@ export default {
     },
 
     delComponent (item) {
-      const { dirName } = this.$route.params
-      this.socket('delComponents', { dirName, componentId: item.id })
+      this.socket(SOCKET.DEL_COMPONENT, { dirName: this.dirName, componentId: item.id })
     },
 
     afterDelComponents (id) {

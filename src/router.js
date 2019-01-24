@@ -12,8 +12,8 @@ export default new Router({
       component: Home
     },
     {
-      path: '/create',
-      name: 'create',
+      path: '/project',
+      name: 'project',
       component: () => import('./views/Create.vue'),
       children: [
         {

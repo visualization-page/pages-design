@@ -1,30 +1,84 @@
 <template>
   <div class="home">
-    <div class="template">
-      <div v-if="templateList" class="template__wrap">
-        <p>模版列表</p>
+    <div class="title">
+      <span>项目信息</span>
+    </div>
+    <div class="home__content">
+      <el-button type="primary" size="medium" @click="newProject">新建项目</el-button>
+      <div class="home__content--list">
+        <el-table
+          :data="recordsList"
+          stripe
+          style="width: 100%">
+          <el-table-column
+            prop="id"
+            label="编号"
+          />
+          <el-table-column
+            prop="dir_name"
+            label="项目名称"
+          />
+          <el-table-column
+            prop="dir_name"
+            label="项目地址"
+          />
+          <el-table-column
+            prop="dir_name"
+            label="说明"
+          />
+          <el-table-column
+            prop="created_at"
+            label="创建时间">
+          </el-table-column>
+          <el-table-column
+            align="right"
+            label="操作"
+          >
+            <template slot-scope="scope">
+              <el-button size="mini" type="text" @click="editRecord(scope.row)">编辑</el-button>
+              <el-button size="mini" type="text">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+
+    <el-dialog
+      title="选择模版"
+      :visible.sync="dialogVisible"
+      width="540px"
+    >
+      <div class="template__list">
         <div
           class="template__item"
           v-for="item in templateList"
           :key="item.id"
-          @click="selectTemplate(item)"
         >
-          <img :src="item.thumbnail" width="100px">
-          <p>{{ item.name }}</p>
+          <div class="template__item--thumb">
+            <img :src="item.thumbnail">
+          </div>
+          <p class="template__item--title">{{ item.name }}模版</p>
+          <div class="template__item--btn">
+            <el-button type="primary" plain size="mini" @click="selectTemplate(item)">立即创建</el-button>
+          </div>
         </div>
       </div>
-    </div>
-    <template v-if="recordsList">
-      <p>记录列表</p>
-      <div
-        class="template__item"
-        v-for="item in recordsList"
-        :key="item.id"
-        @click="editRecord(item)"
-      >
-        <p>name: {{ item.name }} / dir_name: {{ item.dir_name }}</p>
-      </div>
-    </template>
+    </el-dialog>
+
+    <el-dialog
+      title="输入项目名称"
+      :visible.sync="showInputName"
+      width="450px"
+    >
+      <el-form :model="form" :rules="rules" ref="ruleForm">
+        <el-form-item prop="name">
+          <el-input size="small" v-model="form.name" placeholder="字母、数字" />
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" size="mini" @click="createProject">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -35,9 +89,30 @@ export default {
   },
 
   data () {
+    const validate = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请输入'))
+      } else if (/^[a-zA-Z0-9]+$/.test(value)) {
+        callback(new Error('只能为字母、数字'))
+      } else {
+        callback()
+      }
+    }
+
     return {
-      templateList: null,
-      recordsList: null
+      templateList: [],
+      recordsList: [],
+      dialogVisible: false,
+      showInputName: false,
+      form: {
+        name: ''
+      },
+      rules: {
+        name: [
+          { validator: validate, trigger: 'blur' }
+        ]
+      },
+      selectedTemplate: null
     }
   },
 
@@ -52,25 +127,26 @@ export default {
 
   methods: {
     editRecord (item) {
-      // this.socket('prepareTemplate', {
-      //   templateId: item.template_id,
-      //   projectName: item.dir_name,
-      //   // pid: this.serverPid,
-      //   recordId: item.id
-      // })
-      this.$router.push(`/create/record/${item.id}/${item.dir_name}`)
+      this.$router.push(`/project/edit/${item.id}/${item.dir_name}`)
     },
 
-    selectTemplate (templateItem) {
-      const dirName = prompt('输入项目名称，字母数字')
-      if (!dirName) {
-        return
-      }
-      if (/^[a-zA-Z0-9]+$/.test(dirName)) {
-        this.$router.push(`/create/template/${templateItem.id}/${dirName}`)
-      } else {
-        alert('只能输入字母数字')
-      }
+    newProject () {
+      this.dialogVisible = true
+    },
+
+    selectTemplate (item) {
+      this.selectedTemplate = item
+      this.showInputName = true
+    },
+
+    createProject () {
+      this.$refs.ruleForm.validate(valid => {
+        if (valid) {
+          this.$router.push(`/project/create/${this.selectedTemplate.id}/${this.form.name}`)
+        } else {
+          return false
+        }
+      })
     }
   }
 }
@@ -78,16 +154,31 @@ export default {
 
 <style lang="stylus">
   .home
-    width 70%
     height 100%
-    text-align center
+    &__content
+      padding 20px
+      &--list
+        margin-top 20px
   .template
-    display flex
-    justify-content center
-    &__wrap
+    &__list
       display flex
-      margin 0 auto
-      flex-direction column
+      justify-content space-between
     &__item
-      border 1px #eee solid
+      width 240px
+      height 380px
+      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10)
+      border-radius: 4px
+      overflow: hidden
+      &--thumb
+        width 220px
+        height 280px
+        margin 10px auto
+        background-color #f2f2f2
+        img
+          max-width 100%
+      &--title
+        padding-left 10px
+      &--btn
+        text-align right
+        padding-right 10px
 </style>
