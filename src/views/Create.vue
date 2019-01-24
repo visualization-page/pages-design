@@ -16,12 +16,14 @@
 
         <p><a href="javascript:" @click.stop="kill">结束server进程</a></p>
         <p><a href="javascript:" @click="lookProcess">查看当前存活进程</a></p>
+        <button @click="publish">打包发布</button>
       </div>
       <div class="template__preview">
         <iframe
           class="template__mobile"
           v-if="serverUrl"
-          :src="serverUrl"
+          ref="iframe"
+          :src="`${serverUrl}?t=${Date.now()}`"
           frameborder="0"
         />
       </div>
@@ -109,10 +111,13 @@ export default {
             console.log('111')
             break
           case 'putComponent':
-            this.socket('projectInfo', this.$route.params.dirName)
+            this.afterPutComponent(val.result)
             break
           case 'delComponents':
             this.afterDelComponents(val.result)
+            break
+          case 'updateComponents':
+            this.afterUpdateComponents(val.result)
             break
         }
       }
@@ -131,8 +136,8 @@ export default {
   },
 
   methods: {
-    putComponent (item) {
-      this.socket('putComponent', { item, dirName: this.$route.params.dirName })
+    publish () {
+      this.socket('publish', this.$route.params.dirName)
     },
 
     socket (fnName, params) {
@@ -167,7 +172,7 @@ export default {
 
     getComponents () {
       const { dirName } = this.$route.params
-      this.$http.get('getComponents', { projectName: dirName }).then(res => {
+      this.$http.get('getComponents', { dirName }).then(res => {
         this.componentList = res.data
       })
     },
@@ -192,6 +197,19 @@ export default {
       this.selectedComponent = item
     },
 
+    refreshIframe () {
+      this.$refs.iframe.contentWindow.location.reload()
+    },
+
+    putComponent (item) {
+      this.socket('putComponent', { item, dirName: this.$route.params.dirName })
+    },
+
+    afterPutComponent () {
+      this.socket('projectInfo', this.$route.params.dirName)
+      this.refreshIframe()
+    },
+
     saveEditor () {
       const value = this.editorInstance.getValue()
       const { dirName } = this.$route.params
@@ -199,14 +217,21 @@ export default {
       this.socket('updateComponents', { dirName, props: value, componentId: this.selectedComponent.id })
     },
 
+    afterUpdateComponents () {
+      this.refreshIframe()
+    },
+
     delComponent (item) {
       const { dirName } = this.$route.params
       this.socket('delComponents', { dirName, componentId: item.id })
     },
 
-    afterDelComponents (data) {
-      const index = this.templateComponents.find(x => x.id === data)
+    afterDelComponents (id) {
+      const index = this.templateComponents.find(x => x.id === id)
       this.templateComponents.splice(index, 1)
+      if (this.selectedComponent && id === this.selectedComponent.id) {
+        this.selectedComponent = null
+      }
     }
   }
 }
