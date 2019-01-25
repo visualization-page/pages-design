@@ -42,6 +42,10 @@ export default {
   },
 
   methods: {
+    clearMessage () {
+      this.messageArr = []
+    },
+
     toggleMessage () {
       this.showMessage = !this.showMessage
     }
@@ -112,6 +116,7 @@ div
   background-color rgba(0,0,0,.8)
   color #fff
   transition transform .5s ease-out
+  z-index 3000
   &__show
     transform translate3d(-50%, -50%, 0)
   &__end

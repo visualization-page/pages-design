@@ -16,7 +16,7 @@ export default {
             this.afterMakeTemplate(val.result)
             break
           case SOCKET.PROJECT_INFO:
-            this.handleProjectInfo(val.result)
+            this.afterProjectInfo(val.result)
             break
           case SOCKET.PUT_COMPONENT:
             this.afterPutComponent(val.result)
@@ -25,7 +25,16 @@ export default {
             this.afterDelComponents(val.result)
             break
           case SOCKET.UPDATE_COMPONENT:
-            this.afterUpdateComponents(val.result)
+            this.refreshIframe()
+            break
+          case SOCKET.SAVE_PAGE_CONFIG:
+            this.afterSavePageConfig(val.result)
+            break
+          case SOCKET.UPDATE_COMPONENT_SORT:
+            this.refreshIframe()
+            break
+          case SOCKET.PUBLISH:
+            this.afterPublish()
             break
         }
       }

@@ -6,10 +6,10 @@
     element-loading-spinner="el-icon-loading"
   >
     <div class="title">
-      <span>项目信息</span>
+      <span>站点信息</span>
     </div>
     <div class="home__content">
-      <el-button type="primary" size="medium" @click="newProject">新建项目</el-button>
+      <el-button type="primary" size="medium" @click="newProject">新建站点</el-button>
       <div class="home__content--list">
         <el-table
           :data="recordsList"
@@ -22,12 +22,12 @@
           />
           <el-table-column
             prop="dir_name"
-            label="项目名称"
+            label="站点名称"
           />
           <el-table-column
             prop="url"
             width="400px"
-            label="项目地址"
+            label="站点地址"
           />
           <el-table-column
             prop="description"
@@ -167,15 +167,27 @@ export default {
 
     makeTemplate (id, dirName) {
       this.fullscreenLoading = true
+      this.$parent.clearMessage()
+      this.$parent.toggleMessage()
       this.socket(SOCKET.PREPARE_TEMPLATE, {
         templateId: id,
         dirName
       })
     },
 
-    afterMakeTemplate ({ recordId, dirName }) {
-      this.fullscreenLoading = false
-      this.$router.push(`/project/edit/${recordId}/${dirName}`)
+    afterMakeTemplate ({ recordId, dirName, exist }) {
+      if (exist) {
+        this.$message.error('站点名称已存在')
+        this.fullscreenLoading = false
+        this.$parent.toggleMessage()
+        return
+      }
+      this.$message.success('创建站点成功')
+      setTimeout(() => {
+        this.fullscreenLoading = false
+        this.$parent.toggleMessage()
+        this.$router.push(`/project/edit/${recordId}/${dirName}`)
+      }, 2000)
     },
 
     async delRecord (item) {
