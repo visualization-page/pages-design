@@ -134,6 +134,7 @@ export default {
     this.$parent.messageArr = []
 
     // 写cookie
+    // todo 站点状态存redis，构建发布时状态更新
     const records = await this.$http.get('getRecords')
     this.recordsList = records.data
 
