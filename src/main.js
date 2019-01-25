@@ -14,11 +14,10 @@ Vue.config.productionTip = false
 Vue.prototype.$http = new Http({
   baseURL: 'http://127.0.0.1:7001',
   uri: {
-    initCookie: '/',
     getTemplate: '/templates',
-    prepareTemplate: '/prepareTemplate',
     getComponents: '/components',
-    getRecords: '/records'
+    getRecords: '/records',
+    delRecord: '/delRecord'
   },
   timeout: 600000
 })

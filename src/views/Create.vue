@@ -1,55 +1,80 @@
 <template>
-  <div class="create">
-    <div class="create__column">
-      <div v-if="componentList" class="component__wrap">
-        <p>组件库列表</p>
-        <div class="component__com">
-          <div
-            v-for="(item, i) in componentList"
-            :key="i"
-            class="component__item"
-            @click="putComponent(item)"
-          >
-            {{ item.nameText }}
+  <div class="project">
+    <div class="title">
+      <el-button plain size="mini" icon="el-icon-arrow-left" @click="$router.back()">返回</el-button>
+      <el-breadcrumb separator="/">
+        <el-breadcrumb-item :to="{ path: '/' }">项目信息</el-breadcrumb-item>
+        <el-breadcrumb-item>编辑站点</el-breadcrumb-item>
+      </el-breadcrumb>
+    </div>
+    <div class="project__content">
+      <div v-if="componentList" class="project__basic">
+        <div class="project__info project__block--title">
+          <div>页面设置</div>
+        </div>
+        <div class="project__components project__block--title">
+          <div>组件库列表</div>
+          <div class="project__components--wrap">
+            <div
+              v-for="(item, i) in componentList"
+              :key="i"
+              class="project__components--item"
+              @click="putComponent(item)"
+            >
+              {{ item.nameText }}
+            </div>
           </div>
         </div>
-
-        <!--<p><a href="javascript:" @click.stop="kill">结束server进程</a></p>-->
-        <p><a href="javascript:" @click="lookProcess">查看当前存活进程</a></p>
-        <button @click="publish">打包发布</button>
       </div>
-      <div class="template__preview">
-        <iframe
-          class="template__mobile"
-          v-if="serverUrl"
-          ref="iframe"
-          :src="`${serverUrl}?t=${Date.now()}`"
-          frameborder="0"
-        />
-      </div>
-      <div class="template__components">
-        <p>已使用组件列表</p>
+      <div class="project__preview">
+        <div class="project__preview--mobile">
+          <div class="project__preview--mobile-bar">
+            <span>标题</span>
+          </div>
+          <iframe
+            v-if="serverUrl"
+            ref="iframe"
+            :src="`${serverUrl}?t=${Date.now()}`"
+            frameborder="0"
+          />
+        </div>
         <div
-          v-for="(item, i) in templateComponents"
-          :key="i"
-          class="template__components--wrap"
+          class="project__preview--components project__block--title"
+          @click="selectedComponent = null"
         >
-          <div
-            class="template__components--item"
-            :class="{
-              'template__components--active': selectedComponent && selectedComponent.id === item.id
-            }"
-            @click="showSchema(item)"
-          >
-            {{ item.nameText }}
+          <div>已使用组件</div>
+          <div class="project__preview--components-item">
+            <el-tag
+              v-for="item in templateComponents"
+              :key="item.id"
+              :type="selectedComponent && selectedComponent.id === item.id ? '' : 'info'"
+              closable
+              @click.native.stop="showSchema(item)"
+              @close="delComponent(item)"
+            >
+              <i class="el-icon-rank"></i>
+              {{ item.nameText }}
+            </el-tag>
           </div>
-          <a href="javascript:" @click="delComponent(item)">删除</a>
         </div>
       </div>
-      <div class="editor">
+      <div class="project__form project__block--title">
+        <div>编辑组件属性</div>
         <div ref="editor" id="editor__holder"></div>
-        <button v-if="editorInstance" @click="saveEditor">提交</button>
+        <el-button
+          v-if="selectedComponent"
+          size="mini"
+          type="primary"
+          @click="saveEditor"
+        >
+          保存配置
+        </el-button>
       </div>
+    </div>
+    <div class="project__btn">
+      <el-button size="mini" type="primary" @click="publish">构建发布</el-button>
+      <el-button size="mini" @click="lookProcess">查看当前存活进程</el-button>
+      <el-button size="mini" @click="$parent.toggleMessage">显示日志面板</el-button>
     </div>
   </div>
 </template>
@@ -57,14 +82,14 @@
 <script>
 import JSONEditor from '@json-editor/json-editor'
 import { SOCKET } from '../constant'
+import socket from '../mixins/socket'
 
 export default {
-  name: 'create',
+  name: 'project',
 
   data () {
     return {
       componentList: null,
-      serverPid: 0,
       serverUrl: null,
       templateComponents: null,
       selectedComponent: null,
@@ -72,9 +97,14 @@ export default {
     }
   },
 
+  mixins: [socket],
+
   computed: {
-    isCreate () {
-      return this.$route.params.type === 'template' // record
+    // isCreate () {
+    //   return this.$route.params.type === 'create'
+    // },
+    isEdit () {
+      return this.$route.params.type === 'edit'
     },
 
     dirName () {
@@ -86,6 +116,7 @@ export default {
     selectedComponent (val) {
       if (this.editorInstance) {
         this.editorInstance.destroy()
+        this.editorInstance = null
       }
       if (val) {
         this.editorInstance = new JSONEditor(this.$refs.editor, {
@@ -95,51 +126,14 @@ export default {
     }
   },
 
-  sockets: {
-    connect () {
-      this.$socket.emit('chat', [SOCKET.INIT])
-    },
-    operatorLog (val) {
-      this.$parent.messageArr.push(val)
-      if (this.$parent.messageArr.length > 500) {
-        this.$parent.messageArr.splice(500, this.$parent.messageArr.length)
-      }
-      if (typeof val === 'object' && val.result) {
-        switch (val.name) {
-          case SOCKET.PREPARE_TEMPLATE:
-            this.afterMakeTemplate(val.result)
-            break
-          case SOCKET.PROJECT_INFO:
-            this.handleProjectInfo(val.result)
-            break
-          case SOCKET.PUT_COMPONENT:
-            this.afterPutComponent(val.result)
-            break
-          case SOCKET.DEL_COMPONENT:
-            this.afterDelComponents(val.result)
-            break
-          case SOCKET.UPDATE_COMPONENT:
-            this.afterUpdateComponents(val.result)
-            break
-        }
-      }
-    }
-  },
-
   created () {
-    this.getComponents()
-    if (this.isCreate) {
-      this.makeTemplate()
-    } else {
+    if (this.isEdit) {
+      this.getComponents()
       this.getProjectInfo()
     }
   },
 
   methods: {
-    socket (fnName, params) {
-      this.$socket.emit('chat', [fnName, params])
-    },
-
     publish () {
       this.socket(SOCKET.PUBLISH, this.dirName)
     },
@@ -157,23 +151,23 @@ export default {
       this.serverUrl = url
     },
 
-    makeTemplate () {
-      const { id, dirName } = this.$route.params
-      this.socket(SOCKET.PREPARE_TEMPLATE, {
-        [this.isCreate ? 'templateId' : 'recordId']: id,
-        projectName: dirName,
-        siteName: '站名'
-      })
-    },
-
-    afterMakeTemplate ({ pid, url, recordId }) {
-      this.serverPid = pid
-      this.serverUrl = url
-      if (this.isCreate) {
-        const { dirName } = this.$route.params
-        this.$router.replace(`/create/record/${recordId}/${dirName}`)
-      }
-    },
+    // makeTemplate () {
+    //   const { id, dirName } = this.$route.params
+    //   this.socket(SOCKET.PREPARE_TEMPLATE, {
+    //     [this.isCreate ? 'templateId' : 'recordId']: id,
+    //     projectName: dirName,
+    //     siteName: '站名'
+    //   })
+    // },
+    //
+    // afterMakeTemplate ({ url, recordId }) {
+    //   // this.serverPid = pid
+    //   this.serverUrl = url
+    //   if (this.isCreate) {
+    //     const { dirName } = this.$route.params
+    //     this.$router.replace(`/create/record/${recordId}/${dirName}`)
+    //   }
+    // },
 
     getComponents () {
       this.$http.get('getComponents', { dirName: this.dirName }).then(res => {
@@ -229,57 +223,87 @@ export default {
 </script>
 
 <style lang="stylus">
-.create
-  &__column
-    display flex
-    height 100%
-.component
-  &__wrap
-    width 250px
-  &__com
-    display flex
-  &__item
+.project
+  position relative
+  height 100%
+  .title
     display flex
     align-items center
-    justify-content center
-    width 60px
-    height 60px
-    border 1px #eee solid
-.template
-  &__preview
-    position relative
-    min-width 500px
+  .el-breadcrumb
+    margin-left 10px
+    .is-link
+      color #409EFF
+  &__content
+    display flex
+    justify-content space-between
+    height calc(100% - 100px)
+  &__basic
+    width 300px
     height 100%
-    background-color #333
-  &__mobile
-    position absolute
-    left 50%
-    top 50%
-    transform translate(-50%, -50%)
-    width 320px
-    height 480px
-    border 1px #eee solid
-    background-color #fff
+    &>div
+      height 50%
   &__components
-    display flex
-    align-items center
-    flex-direction column
-    width 200px
-    border-right 1px #eee solid
+    border-top 1px #eee solid
     &--wrap
       display flex
-      align-items center
     &--item
-      width 100px
-      height 40px
-      border 1px #eee solid
+      width 70px
+      height 30px
+      background-color #f2f2f2
       display flex
       align-items center
       justify-content center
-      margin-bottom 10px
-    &--active
-      background-color azure
-
-.editor
-  padding-left 15px
+      margin 10px 10px 0 0
+  &__form
+    width 400px
+    height 100%
+  &__preview
+    position relative
+    width calc(100% - 700px)
+    height 100%
+    border-left 1px #eee solid
+    border-right 1px #eee solid
+    &--mobile
+      position absolute
+      width 320px
+      left 50%
+      transform translateX(-50%)
+      top 30px
+      bottom 30px
+      background: #F7F8F9
+      border: 1px solid #E9ECF0
+      box-shadow: 0 4px 10px 0 rgba(0,0,0,0.10)
+      &-bar
+        height 57px
+        background-image url('../assets/mobile-bar.jpg')
+        background-size 100% auto
+        background-repeat no-repeat
+        display flex
+        justify-content center
+        align-items flex-end
+        padding-bottom 12px
+    iframe
+      width 100%
+      height calc(100% - 62px)
+      margin-top 5px
+    &--components
+      position absolute
+      right 0
+      height 100%
+      top 0
+      background-color #fff
+      border-left 1px #eee solid
+      &-item
+        margin-top 10px
+  &__btn
+    position absolute
+    bottom 0
+    width 100%
+    height 50px
+    display flex
+    justify-content center
+    align-items center
+    border-top 1px #eee solid
+  &__block--title
+    padding 30px 15px 30px
 </style>

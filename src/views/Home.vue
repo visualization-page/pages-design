@@ -1,5 +1,10 @@
 <template>
-  <div class="home">
+  <div
+    class="home"
+    v-loading.fullscreen.lock="fullscreenLoading"
+    element-loading-text="下载模版中，请耐心等待"
+    element-loading-spinner="el-icon-loading"
+  >
     <div class="title">
       <span>项目信息</span>
     </div>
@@ -12,6 +17,7 @@
           style="width: 100%">
           <el-table-column
             prop="id"
+            width="60px"
             label="编号"
           />
           <el-table-column
@@ -19,11 +25,12 @@
             label="项目名称"
           />
           <el-table-column
-            prop="dir_name"
+            prop="url"
+            width="400px"
             label="项目地址"
           />
           <el-table-column
-            prop="dir_name"
+            prop="description"
             label="说明"
           />
           <el-table-column
@@ -36,7 +43,7 @@
           >
             <template slot-scope="scope">
               <el-button size="mini" type="text" @click="editRecord(scope.row)">编辑</el-button>
-              <el-button size="mini" type="text">删除</el-button>
+              <el-button size="mini" type="text" @click="delRecord(scope.row)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -72,7 +79,7 @@
     >
       <el-form :model="form" :rules="rules" ref="ruleForm">
         <el-form-item prop="name">
-          <el-input size="small" v-model="form.name" placeholder="字母、数字" />
+          <el-input size="small" v-model="form.name" placeholder="字母、数字、下划线" />
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -83,17 +90,23 @@
 </template>
 
 <script>
+import { SOCKET } from '../constant'
+import socket from '../mixins/socket'
+
 export default {
   name: 'home',
+
   components: {
   },
+
+  mixins: [socket],
 
   data () {
     const validate = (rule, value, callback) => {
       if (value === '') {
         callback(new Error('请输入'))
-      } else if (/^[a-zA-Z0-9]+$/.test(value)) {
-        callback(new Error('只能为字母、数字'))
+      } else if (!/^[a-zA-Z0-9-]+$/.test(value)) {
+        callback(new Error('只能为字母、数字、下划线'))
       } else {
         callback()
       }
@@ -104,6 +117,7 @@ export default {
       recordsList: [],
       dialogVisible: false,
       showInputName: false,
+      fullscreenLoading: false,
       form: {
         name: ''
       },
@@ -117,6 +131,8 @@ export default {
   },
 
   async created () {
+    this.$parent.messageArr = []
+
     // 写cookie
     const records = await this.$http.get('getRecords')
     this.recordsList = records.data
@@ -142,11 +158,34 @@ export default {
     createProject () {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
-          this.$router.push(`/project/create/${this.selectedTemplate.id}/${this.form.name}`)
+          this.makeTemplate(this.selectedTemplate.id, this.form.name)
         } else {
           return false
         }
       })
+    },
+
+    makeTemplate (id, dirName) {
+      this.fullscreenLoading = true
+      this.socket(SOCKET.PREPARE_TEMPLATE, {
+        templateId: id,
+        dirName
+      })
+    },
+
+    afterMakeTemplate ({ recordId, dirName }) {
+      this.fullscreenLoading = false
+      this.$router.push(`/project/edit/${recordId}/${dirName}`)
+    },
+
+    async delRecord (item) {
+      const ok = await this.$confirm('确定要删除吗？', { type: 'warning' })
+      if (ok !== 'confirm') return
+      const loading = this.$loading()
+      await this.$http.post('delRecord', { id: item.id, dirName: item.dir_name })
+      const index = this.recordsList.findIndex(x => x.id === item.id)
+      this.recordsList.splice(index, 1)
+      loading.close()
     }
   }
 }

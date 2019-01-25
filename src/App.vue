@@ -4,7 +4,12 @@
     <div class="wrapper">
       <router-view/>
     </div>
-    <div class="message" v-if="false">
+    <div
+      class="message"
+      :class="{
+        'message__show': showMessage
+      }"
+    >
       <div class="message__wrap">
         <p
           v-for="(item, i) in messageArr.filter(x => x)"
@@ -19,9 +24,12 @@
 
 <script>
 export default {
+  name: 'app',
+
   data () {
     return {
-      messageArr: []
+      messageArr: [],
+      showMessage: false
     }
   },
 
@@ -30,6 +38,12 @@ export default {
       if (this.$refs.end) {
         this.$refs.end.scrollIntoView(false)
       }
+    }
+  },
+
+  methods: {
+    toggleMessage () {
+      this.showMessage = !this.showMessage
     }
   }
 }
@@ -61,8 +75,8 @@ div
   background-color #fff
   box-shadow 0 0 7px rgba(0, 0, 0, .1)
 .title
+  height 50px
   line-height 50px
-  /*border-bottom 1px #eee solid*/
   box-shadow: inset 0 -1px 0 0 #E9ECF0
   padding-left 20px
 
@@ -86,13 +100,20 @@ div
   padding 0 20px 20px !important
 
 .message
-  width 30%
-  // flex-basis 400px
+  position fixed
+  width 900px
+  height 600px
+  top 50%
+  left 50%
+  transform translate3d(-50%, -200%, 0)
   overflow: auto
-  padding 10px
-  background-color #333
+  padding 10px 15px
+  border-radius 5px
+  background-color rgba(0,0,0,.8)
   color #fff
-  height 100%
+  transition transform .5s ease-out
+  &__show
+    transform translate3d(-50%, -50%, 0)
   &__end
     margin-top 40px
     height 30px
