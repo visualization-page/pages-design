@@ -5,6 +5,10 @@ export default {
     connect () {
       this.$socket.emit('chat', [SOCKET.INIT])
     },
+    disconnect () {
+      console.log('disconnect unsubscribe operatorLog')
+      this.$socket.unsubscribe('operatorLog')
+    },
     operatorLog (val) {
       this.$parent.messageArr.push(val)
       if (this.$parent.messageArr.length > 500) {
@@ -36,6 +40,9 @@ export default {
           case SOCKET.PUBLISH:
             this.afterPublish()
             break
+          case SOCKET.SET_STATUS:
+            this.afterSetProjectStatus(val.result)
+            break
         }
       }
     }
@@ -44,6 +51,14 @@ export default {
   methods: {
     socket (fnName, params) {
       this.$socket.emit('chat', [fnName, params])
+    },
+
+    setProjectStatus (status = '') {
+      this.socket(SOCKET.SET_STATUS, { dirName: this.dirName, status })
+    },
+
+    afterSetProjectStatus (status) {
+      console.log(status)
     }
   }
 }

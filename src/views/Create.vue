@@ -138,7 +138,8 @@ export default {
           { required: true, message: '请输入', trigger: 'blur' },
           { min: 1, max: 20, message: '长度在 1 到 20 个字符', trigger: 'blur' }
         ]
-      }
+      },
+      unloadPage: false
     }
   },
 
@@ -172,7 +173,26 @@ export default {
     if (this.isEdit) {
       this.getComponents()
       this.getProjectInfo()
+      this.setProjectStatus('edit')
     }
+
+    window.onunload = () => {
+      this.setProjectStatus()
+    }
+    // window.addEventListener('popstate', () => {
+    // })
+  },
+
+  beforeRouteLeave (to, from, next) {
+    this.$confirm('确定要离开吗？').then(() => {
+      this.setProjectStatus()
+      next()
+    }).catch(() => {
+      next(false)
+    })
+  },
+
+  destroyed () {
   },
 
   methods: {

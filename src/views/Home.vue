@@ -25,25 +25,37 @@
             label="站点名称"
           />
           <el-table-column
+            prop="description"
+            label="说明"
+          />
+          <el-table-column
             prop="url"
             width="400px"
             label="站点地址"
-          />
-          <el-table-column
-            prop="description"
-            label="说明"
           />
           <el-table-column
             prop="created_at"
             label="创建时间">
           </el-table-column>
           <el-table-column
+            prop="editStatus"
+            width="80px"
+            label="状态"
+          >
+            <template slot-scope="scope">
+              <span :style="{ color: scope.row.isEdit && '#E6A23C' }">{{ scope.row.isEdit ? '编辑中' : '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
             align="right"
             label="操作"
           >
             <template slot-scope="scope">
-              <el-button size="mini" type="text" @click="editRecord(scope.row)">编辑</el-button>
-              <el-button size="mini" type="text" @click="delRecord(scope.row)">删除</el-button>
+              <template v-if="!scope.row.isEdit">
+                <el-button size="mini" type="text" @click="editRecord(scope.row)">编辑</el-button>
+                <el-button size="mini" type="text" @click="delRecord(scope.row)">删除</el-button>
+              </template>
+              <span v-else>-</span>
             </template>
           </el-table-column>
         </el-table>
@@ -136,7 +148,11 @@ export default {
     // 写cookie
     // todo 站点状态存redis，构建发布时状态更新
     const records = await this.$http.get('getRecords')
-    this.recordsList = records.data
+    this.recordsList = records.data.map(x => ({
+      ...x,
+      isEdit: x.editStatus === 'edit',
+      url: x.status ? x.url.replace('/dist/', '/release/') : x.url
+    }))
 
     const templates = await this.$http.get('getTemplate')
     this.templateList = templates.data

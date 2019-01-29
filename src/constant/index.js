@@ -8,7 +8,8 @@ export const SOCKET = {
   PUBLISH: 'publish',
   LOOK_PROCESS: 'lookProcess',
   SAVE_PAGE_CONFIG: 'savePageConfig',
-  UPDATE_COMPONENT_SORT: 'updateComponentSort'
+  UPDATE_COMPONENT_SORT: 'updateComponentSort',
+  SET_STATUS: 'setProjectStatus'
 }
 
 export const a = 1
