@@ -86,7 +86,12 @@
       </div>
       <div class="project__form project__block--title">
         <div>编辑组件属性</div>
-        <div ref="editor" id="editor__holder"></div>
+        <schema
+          v-if="selectedComponent"
+          ref="schema"
+          :schema="selectedComponent.schema"
+        />
+        <!--<div ref="editor" id="editor__holder"></div>-->
         <div class="project__block--btn">
           <el-button
             v-if="selectedComponent"
@@ -112,12 +117,14 @@ import JSONEditor from '@json-editor/json-editor'
 import draggable from 'vuedraggable'
 import { SOCKET } from '../constant'
 import socket from '../mixins/socket'
+import Schema from '../components/schema/Index'
 
 export default {
   name: 'project',
 
   components: {
-    draggable
+    draggable,
+    Schema
   },
 
   data () {
@@ -126,7 +133,7 @@ export default {
       serverUrl: null,
       templateComponents: null,
       selectedComponent: null,
-      editorInstance: null,
+      // editorInstance: null,
       fullscreenLoading: false,
 
       pageConfigForm: {
@@ -157,15 +164,15 @@ export default {
 
   watch: {
     selectedComponent (val) {
-      if (this.editorInstance) {
-        this.editorInstance.destroy()
-        this.editorInstance = null
-      }
-      if (val) {
-        this.editorInstance = new JSONEditor(this.$refs.editor, {
-          schema: val.schema
-        })
-      }
+      // if (this.editorInstance) {
+      //   this.editorInstance.destroy()
+      //   this.editorInstance = null
+      // }
+      // if (val) {
+      //   this.editorInstance = new JSONEditor(this.$refs.editor, {
+      //     schema: val.schema
+      //   })
+      // }
     }
   },
 
@@ -271,7 +278,8 @@ export default {
     saveEditor () {
       this.socket(SOCKET.UPDATE_COMPONENT, {
         dirName: this.dirName,
-        props: this.editorInstance.getValue(),
+        // props: this.editorInstance.getValue(),
+        props: this.$refs.schema.getValue(),
         componentId: this.selectedComponent.id
       })
     },
