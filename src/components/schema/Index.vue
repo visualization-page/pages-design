@@ -1,7 +1,7 @@
 <template>
   <div class="schema" v-if="mapData">
     <p>{{ schema.title }}</p>
-    <template v-if="schema.subTypes && schema.subTypes.length">
+    <div class="schema__subtype" v-if="schema.subTypes && schema.subTypes.length">
       <p>选择模版</p>
       <div
         v-for="(item, i) in schema.subTypes"
@@ -15,7 +15,7 @@
         <div class="schema__sub--cover"></div>
         <span>{{ item.title }}</span>
       </div>
-    </template>
+    </div>
     <div class="schema__properties">
       <template v-for="field in Object.keys(properties)">
         <div
@@ -34,10 +34,23 @@
           :key="field"
           :label="properties[field].title"
           :options="properties[field].options"
+          :is-link="properties[field].isLink"
           v-model="mapData[field]"
-        />
+        >
+          <schema-input
+            v-if="properties[field].isLink"
+            :is-link="properties[field].isLink"
+            v-model="mapData[field]"
+          />
+        </schema-select>
         <schema-color
           v-else-if="isColor(properties[field].format)"
+          :key="field"
+          :label="properties[field].title"
+          v-model="mapData[field]"
+        />
+        <schema-image
+          v-else-if="isImage(properties[field].format)"
           :key="field"
           :label="properties[field].title"
           v-model="mapData[field]"
@@ -50,6 +63,10 @@
         />
       </template>
     </div>
+
+    <resource
+      v-if="showResource"
+    />
   </div>
 </template>
 
@@ -58,8 +75,14 @@ import FormatImage from './SchemaBlockImage'
 import SchemaSelect from './SchemaSelect'
 import SchemaInput from './SchemaInput'
 import SchemaColor from './SchemaColor'
+import SchemaImage from './SchemaImage'
+import formatType from './mixin/formatType'
+import resource from './mixin/resource'
+import Resource from './Resource'
 
 export default {
+  name: 'Schema',
+
   data () {
     return {
       selectedSubTypesIndex: undefined,
@@ -71,11 +94,15 @@ export default {
     schema: Object
   },
 
+  mixins: [formatType, resource],
+
   components: {
     FormatImage,
     SchemaInput,
     SchemaSelect,
-    SchemaColor
+    SchemaColor,
+    SchemaImage,
+    Resource
   },
 
   computed: {
@@ -88,11 +115,16 @@ export default {
     }
   },
 
+  watch: {
+    selectedSubTypesIndex () {
+      this.mapData = this.initMapData(this.properties)
+    }
+  },
+
   created () {
     if (this.schema.subTypes && this.schema.subTypes.length) {
       this.selectedSubTypesIndex = 0
     }
-
     this.mapData = this.initMapData(this.properties)
   },
 
@@ -100,13 +132,14 @@ export default {
     initMapData (obj) {
       const result = {}
       Object.keys(obj).forEach(key => {
-        if (/block-/.test(obj[key].format)) {
+        const { format } = obj[key]
+        if (/block-/.test(format)) {
           result[key] = []
-          obj[key].enum.forEach(valItem => {
-            result[key].push(valItem)
+          obj[key].enum.forEach((valItem, i) => {
+            result[key].push(this.mapData && this.mapData[key][i] || valItem)
           })
         } else {
-          result[key] = obj[key].default
+          result[key] = this.mapData && this.mapData[key] || obj[key].default
         }
       })
       return result
@@ -114,26 +147,6 @@ export default {
 
     getValue () {
       return JSON.parse(JSON.stringify(this.mapData))
-    },
-
-    isBlockImg (format) {
-      return format === 'block-image'
-    },
-
-    isSelect (format) {
-      return format === 'select'
-    },
-
-    isColor (format) {
-      return format === 'color'
-    },
-
-    isArray (type) {
-      return type === 'array'
-    },
-
-    isDefault (type) {
-      return type === 'string'
     }
   }
 }
@@ -141,6 +154,10 @@ export default {
 
 <style lang="stylus">
 .schema
+  &__subtype
+    margin-bottom 20px
+    padding-bottom 20px
+    border-bottom 1px solid #E9ECF0
   &__sub
     display inline-block
     border 1px #eee solid
@@ -167,13 +184,4 @@ export default {
     &__label
       flex 0 0 60px
       font-size 12px
-  &-block-image-group
-    margin 20px 0
-    padding 20px 0
-    border-top 1px solid #E9ECF0
-    border-bottom 1px solid #E9ECF0
-    .schema-format-image
-      margin-bottom 20px
-      &:last-child
-        margin-bottom 0
 </style>

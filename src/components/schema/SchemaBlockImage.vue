@@ -91,4 +91,12 @@ export default {
         margin-bottom 20px
         &:last-child
           margin-bottom 0
+.schema-block-image-group
+  margin-bottom 20px
+  padding-bottom 20px
+  border-bottom 1px solid #E9ECF0
+  .schema-format-image
+    margin-bottom 20px
+    &:last-child
+      margin-bottom 0
 </style>
