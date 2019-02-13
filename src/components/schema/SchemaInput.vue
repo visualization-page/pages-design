@@ -1,10 +1,17 @@
 <template>
-  <div class="schema-item schema-input">
+  <div
+    class="schema-item schema-input"
+    :class="{
+      'schema-input-textarea': isTextarea
+    }"
+  >
     <span class="schema-item__label" v-if="label">{{ label }}：</span>
     <el-input
       size="mini"
       :value="splitValue[linkIndex]"
       :placeholder="placeholder"
+      :type="isTextarea ? 'textarea' : undefined"
+      :autosize="{ minRows: 3, maxRows: 6}"
       @input="val => handleChange(val, 0)"
     />
   </div>
@@ -19,7 +26,8 @@ export default {
   props: {
     label: String,
     placeholder: String,
-    value: String
+    value: String,
+    isTextarea: Boolean
   },
 
   mixins: [link],
@@ -36,7 +44,6 @@ export default {
 </script>
 
 <style lang="stylus">
-  .schema-input
-    // display flex
-    // align-items center
+  .schema-input-textarea.schema-item
+    align-items flex-start
 </style>

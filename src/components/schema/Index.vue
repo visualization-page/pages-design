@@ -1,6 +1,6 @@
 <template>
   <div class="schema" v-if="mapData">
-    <p>{{ schema.title }}</p>
+    <!--<p>{{ schema.title }}</p>-->
     <div class="schema__subtype" v-if="schema.subTypes && schema.subTypes.length">
       <p>选择模版</p>
       <div
@@ -55,10 +55,17 @@
           :label="properties[field].title"
           v-model="mapData[field]"
         />
+        <schema-input-number
+          v-else-if="isNumber(properties[field].type)"
+          :key="field"
+          :label="properties[field].title"
+          v-model="mapData[field]"
+        />
         <schema-input
           v-else-if="isDefault(properties[field].type)"
           :key="field"
           :label="properties[field].title"
+          :is-textarea="isTextarea(properties[field].format)"
           v-model="mapData[field]"
         />
       </template>
@@ -74,6 +81,7 @@
 import FormatImage from './SchemaBlockImage'
 import SchemaSelect from './SchemaSelect'
 import SchemaInput from './SchemaInput'
+import SchemaInputNumber from './SchemaInputNumber'
 import SchemaColor from './SchemaColor'
 import SchemaImage from './SchemaImage'
 import formatType from './mixin/formatType'
@@ -102,7 +110,8 @@ export default {
     SchemaSelect,
     SchemaColor,
     SchemaImage,
-    Resource
+    Resource,
+    SchemaInputNumber
   },
 
   computed: {
@@ -118,17 +127,29 @@ export default {
   watch: {
     selectedSubTypesIndex () {
       this.mapData = this.initMapData(this.properties)
+    },
+    schema (val) {
+      this.mapData = null
+      if (val) {
+        this.init()
+      }
     }
   },
 
   created () {
-    if (this.schema.subTypes && this.schema.subTypes.length) {
-      this.selectedSubTypesIndex = 0
-    }
-    this.mapData = this.initMapData(this.properties)
+    this.init()
   },
 
   methods: {
+    init () {
+      if (this.schema.subTypes && this.schema.subTypes.length) {
+        this.selectedSubTypesIndex = 0
+      } else {
+        this.selectedSubTypesIndex = undefined
+      }
+      this.mapData = this.initMapData(this.properties)
+    },
+
     initMapData (obj) {
       const result = {}
       Object.keys(obj).forEach(key => {
@@ -139,7 +160,9 @@ export default {
             result[key].push(this.mapData && this.mapData[key][i] || valItem)
           })
         } else {
-          result[key] = this.mapData && this.mapData[key] || obj[key].default
+          result[key] = obj[key].overwrite
+            ? obj[key].default
+            : this.mapData && this.mapData[key] || obj[key].default
         }
       })
       return result

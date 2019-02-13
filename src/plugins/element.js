@@ -15,9 +15,15 @@ import {
   Radio,
   RadioGroup,
   ColorPicker,
-  Message
+  Message,
+  Select,
+  Option,
+  InputNumber
 } from 'element-ui'
 
+Vue.use(Select)
+Vue.use(InputNumber)
+Vue.use(Option)
 Vue.use(Button)
 Vue.use(Table)
 Vue.use(TableColumn)

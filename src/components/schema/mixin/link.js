@@ -5,7 +5,7 @@ export default {
 
   computed: {
     splitValue () {
-      if (this.isLink) {
+      if (this.isLink && this.value) {
         const arr = this.value.split('_')
         return [arr[0], arr.length > 2 ? arr.slice(1, arr.length).join('_') : arr[1]]
       }
@@ -21,7 +21,7 @@ export default {
           ? `${val}_${this.splitValue[type]}`
           : `${this.splitValue[type]}_${val}`
       }
-      console.log(value)
+      // console.log(value)
       this.$emit('input', value)
     }
   }

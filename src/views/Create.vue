@@ -44,25 +44,19 @@
         </div>
       </div>
       <div class="project__preview">
-        <div
-          class="project__preview--mobile"
-          :style="{
-            backgroundColor: pageConfigForm.bgColor
-          }"
-        >
+        <div class="project__preview--mobile">
           <div class="project__preview--mobile-bar">
             <span>{{ pageConfigForm.title }}</span>
           </div>
           <iframe
             v-if="serverUrl"
             ref="iframe"
-            :src="`${serverUrl}?t=${Date.now()}`"
+            :src="`${serverUrl}`"
             frameborder="0"
           />
         </div>
         <div
           class="project__preview--components project__block--title"
-          @click="selectedComponent = null"
         >
           <div>已使用组件</div>
           <draggable
@@ -113,7 +107,7 @@
 </template>
 
 <script>
-import JSONEditor from '@json-editor/json-editor'
+// import JSONEditor from '@json-editor/json-editor'
 import draggable from 'vuedraggable'
 import { SOCKET } from '../constant'
 import socket from '../mixins/socket'
@@ -164,6 +158,7 @@ export default {
 
   watch: {
     selectedComponent (val) {
+      // console.log(val)
       // if (this.editorInstance) {
       //   this.editorInstance.destroy()
       //   this.editorInstance = null
@@ -253,11 +248,18 @@ export default {
       })
     },
 
+    // 选中已使用组件
     showSchema (item) {
       Object.keys(item.props).forEach(key => {
-        item.schema.properties[key].default = item.props[key]
+        if (item.schema.properties[key]) {
+          item.schema.properties[key].default = item.props[key]
+        } else if (item.schema.subTypes) {
+          const subItem = item.schema.subTypes.find(x => x.properties[key])
+          subItem && (subItem.properties[key].default = item.props[key])
+        }
       })
       this.selectedComponent = item
+      this.iframeWindowMirrorFocus(item)
     },
 
     refreshIframe () {
@@ -284,21 +286,41 @@ export default {
       })
     },
 
+    afterUpdateSchema (templateComponents) {
+      // 更新本地组件配置
+      this.templateComponents = templateComponents
+      this.refreshIframe()
+    },
+
     delComponent (item) {
       this.socket(SOCKET.DEL_COMPONENT, { dirName: this.dirName, componentId: item.id })
     },
 
-    afterDelComponents (id) {
-      const index = this.templateComponents.find(x => x.id === id)
-      this.templateComponents.splice(index, 1)
-      if (this.selectedComponent && id === this.selectedComponent.id) {
+    afterDelComponents ({ componentId, components }) {
+      this.templateComponents = components
+      if (this.selectedComponent && componentId === this.selectedComponent.id) {
         this.selectedComponent = null
       }
+      this.refreshIframe()
     },
 
     dragEnd (data) {
       this.templateComponents = data
       this.socket(SOCKET.UPDATE_COMPONENT_SORT, { data, dirName: this.dirName })
+    },
+
+    // 将当前选中组件滚动到视野内并focus
+    iframeWindowMirrorFocus (item) {
+      const { document } = this.$refs.iframe.contentWindow
+      const componentsElem = document.querySelector('.components')
+      const componentsSort = componentsElem.getAttribute('data-id-sort').split(',')
+      const itemIndex = componentsSort.findIndex(x => x === item.id)
+      componentsElem.childNodes[itemIndex].scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
+      componentsElem.childNodes.forEach(item => item.style.cssText = '')
+      componentsElem.childNodes[itemIndex].style.cssText = 'box-shadow: 0 0 10px red'
     }
   }
 }
@@ -335,6 +357,8 @@ export default {
         margin-left 10px
     .el-form-item
       margin-bottom 10px
+  &__info
+    position relative
   &__components
     border-top 1px #eee solid
     &--wrap
@@ -348,8 +372,17 @@ export default {
       justify-content center
       margin 10px 10px 0 0
   &__form
+    position relative
     width 400px
     height 100%
+    .schema
+      position: absolute
+      left: 15px
+      right 15px
+      bottom: 38px
+      top: 50px
+      background-color: #fff
+      overflow: auto
   &__preview
     position relative
     width calc(100% - 700px)
@@ -359,11 +392,9 @@ export default {
     &--mobile
       position absolute
       width 320px
-      left 50%
-      transform translateX(-50%)
+      left calc((100% - 320px - 115px) / 2)
       top 30px
       bottom 30px
-      // background: #F7F8F9
       border: 1px solid #E9ECF0
       box-shadow: 0 4px 10px 0 rgba(0,0,0,0.10)
       &-bar
@@ -403,6 +434,13 @@ export default {
   &__block--title
     padding 30px 15px 30px
   &__block--btn
+    position absolute
+    width 100%
+    bottom 0
+    left 0
     text-align center
-    padding-top 30px
+    // padding-top 30px
+    padding 5px 0
+    background-color #fff
+    // border-top 1px solid #E9ECF0
 </style>

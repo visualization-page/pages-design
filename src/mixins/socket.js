@@ -7,7 +7,7 @@ export default {
     },
     disconnect () {
       console.log('disconnect unsubscribe operatorLog')
-      this.$socket.unsubscribe('operatorLog')
+      // this.$socket.unsubscribe('operatorLog')
     },
     operatorLog (val) {
       this.$parent.messageArr.push(val)
@@ -29,7 +29,7 @@ export default {
             this.afterDelComponents(val.result)
             break
           case SOCKET.UPDATE_COMPONENT:
-            this.refreshIframe()
+            this.afterUpdateSchema(val.result)
             break
           case SOCKET.SAVE_PAGE_CONFIG:
             this.afterSavePageConfig(val.result)
