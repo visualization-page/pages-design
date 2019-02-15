@@ -43,6 +43,9 @@ export default {
           case SOCKET.SET_STATUS:
             this.afterSetProjectStatus(val.result)
             break
+          case SOCKET.CHECK_UPDATE:
+            this.afterCheckProjectTemplateAndComponentVersion()
+            break
         }
       }
     }

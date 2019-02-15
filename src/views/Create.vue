@@ -173,6 +173,7 @@ export default {
 
   created () {
     if (this.isEdit) {
+      this.checkProjectTemplateAndComponentVersion()
       this.getComponents()
       this.getProjectInfo()
       this.setProjectStatus('edit')
@@ -238,8 +239,8 @@ export default {
     afterProjectInfo ({ components, url, title, bgColor }) {
       this.templateComponents = components
       this.serverUrl = url
-      this.pageConfigForm.title = title || '标题'
-      this.pageConfigForm.bgColor = bgColor || '#f7f8f9'
+      this.pageConfigForm.title = title
+      this.pageConfigForm.bgColor = bgColor
     },
 
     getComponents () {
@@ -264,6 +265,11 @@ export default {
 
     refreshIframe () {
       this.$refs.iframe.contentWindow.location.reload()
+      if (this.selectedComponent) {
+        setTimeout(() => {
+          this.iframeWindowMirrorFocus(this.selectedComponent)
+        }, 500)
+      }
     },
 
     putComponent (item) {
@@ -309,6 +315,15 @@ export default {
       this.socket(SOCKET.UPDATE_COMPONENT_SORT, { data, dirName: this.dirName })
     },
 
+    checkProjectTemplateAndComponentVersion () {
+      this.fullscreenLoading = true
+      this.socket(SOCKET.CHECK_UPDATE, { dirName: this.dirName })
+    },
+
+    afterCheckProjectTemplateAndComponentVersion () {
+      this.fullscreenLoading = false
+    },
+
     // 将当前选中组件滚动到视野内并focus
     iframeWindowMirrorFocus (item) {
       const { document } = this.$refs.iframe.contentWindow
@@ -319,8 +334,8 @@ export default {
         behavior: 'smooth',
         block: 'start'
       })
-      componentsElem.childNodes.forEach(item => item.style.cssText = '')
-      componentsElem.childNodes[itemIndex].style.cssText = 'box-shadow: 0 0 10px red'
+      componentsElem.childNodes.forEach(item => item.style.boxShadow = '')
+      componentsElem.childNodes[itemIndex].style.boxShadow = '0 0 10px red'
     }
   }
 }

@@ -9,7 +9,6 @@ export const SOCKET = {
   LOOK_PROCESS: 'lookProcess',
   SAVE_PAGE_CONFIG: 'savePageConfig',
   UPDATE_COMPONENT_SORT: 'updateComponentSort',
-  SET_STATUS: 'setProjectStatus'
+  SET_STATUS: 'setProjectStatus',
+  CHECK_UPDATE: 'checkTemplateComponentUpdate'
 }
-
-export const a = 1

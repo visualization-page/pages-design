@@ -6,10 +6,10 @@
     element-loading-spinner="el-icon-loading"
   >
     <div class="title">
-      <span>站点信息</span>
+      <span>项目信息</span>
     </div>
     <div class="home__content">
-      <el-button type="primary" size="medium" @click="newProject">新建站点</el-button>
+      <el-button type="primary" size="medium" @click="newProject">新建项目</el-button>
       <div class="home__content--list">
         <el-table
           :data="recordsList"
@@ -22,7 +22,7 @@
           />
           <el-table-column
             prop="dir_name"
-            label="站点名称"
+            label="项目名称"
           />
           <el-table-column
             prop="description"
@@ -31,7 +31,7 @@
           <el-table-column
             prop="url"
             width="400px"
-            label="站点地址"
+            label="项目地址"
           />
           <el-table-column
             prop="created_at"
@@ -146,7 +146,7 @@ export default {
     this.$parent.messageArr = []
 
     // 写cookie
-    // todo 站点状态存redis，构建发布时状态更新
+    // todo 项目状态存redis，构建发布时状态更新
     const records = await this.$http.get('getRecords')
     this.recordsList = records.data.map(x => ({
       ...x,
@@ -164,7 +164,8 @@ export default {
     },
 
     newProject () {
-      this.dialogVisible = true
+      // this.dialogVisible = true
+      this.selectTemplate(this.templateList[0])
     },
 
     selectTemplate (item) {
@@ -185,7 +186,7 @@ export default {
     makeTemplate (id, dirName) {
       this.fullscreenLoading = true
       this.$parent.clearMessage()
-      this.$parent.toggleMessage()
+      // this.$parent.toggleMessage()
       this.socket(SOCKET.PREPARE_TEMPLATE, {
         templateId: id,
         dirName
@@ -194,15 +195,15 @@ export default {
 
     afterMakeTemplate ({ recordId, dirName, exist }) {
       if (exist) {
-        this.$message.error('站点名称已存在')
+        this.$message.error('项目名称已存在')
         this.fullscreenLoading = false
-        this.$parent.toggleMessage()
+        // this.$parent.toggleMessage()
         return
       }
-      this.$message.success('创建站点成功')
+      this.$message.success('创建项目成功')
       setTimeout(() => {
         this.fullscreenLoading = false
-        this.$parent.toggleMessage()
+        // this.$parent.toggleMessage()
         this.$router.push(`/project/edit/${recordId}/${dirName}`)
       }, 2000)
     },
