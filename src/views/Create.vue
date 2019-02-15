@@ -2,14 +2,14 @@
   <div
     class="project"
     v-loading.fullscreen.lock="fullscreenLoading"
-    element-loading-text="操作中，请等待..."
+    :element-loading-text="$parent.loadingText"
     element-loading-spinner="el-icon-loading"
   >
     <div class="title">
       <el-button plain size="mini" icon="el-icon-arrow-left" @click="$router.push('/')">返回</el-button>
       <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/' }">站点信息</el-breadcrumb-item>
-        <el-breadcrumb-item>编辑站点</el-breadcrumb-item>
+        <el-breadcrumb-item :to="{ path: '/' }">项目信息</el-breadcrumb-item>
+        <el-breadcrumb-item>编辑项目</el-breadcrumb-item>
       </el-breadcrumb>
     </div>
     <div class="project__content">
@@ -173,15 +173,14 @@ export default {
 
   created () {
     if (this.isEdit) {
+      this.setProjectStatus('edit')
       this.checkProjectTemplateAndComponentVersion()
       this.getComponents()
-      this.getProjectInfo()
-      this.setProjectStatus('edit')
     }
 
-    window.onunload = () => {
-      this.setProjectStatus()
-    }
+    // window.onunload = () => {
+    //   this.setProjectStatus()
+    // }
     // window.addEventListener('popstate', () => {
     // })
   },
@@ -216,14 +215,17 @@ export default {
 
     publish () {
       this.fullscreenLoading = true
-      this.$parent.clearMessage()
-      this.$parent.toggleMessage()
+      // this.$parent.clearMessage()
+      // this.$parent.toggleMessage()
       this.socket(SOCKET.PUBLISH, this.dirName)
     },
 
     afterPublish () {
       this.fullscreenLoading = false
-      this.$parent.toggleMessage()
+      this.$parent.clearMessage()
+      this.$message.success('构建成功')
+      // this.$router.back()
+      // this.$parent.toggleMessage()
     },
 
     lookProcess () {
@@ -322,6 +324,7 @@ export default {
 
     afterCheckProjectTemplateAndComponentVersion () {
       this.fullscreenLoading = false
+      this.getProjectInfo()
     },
 
     // 将当前选中组件滚动到视野内并focus
@@ -386,6 +389,7 @@ export default {
       align-items center
       justify-content center
       margin 10px 10px 0 0
+      cursor pointer
   &__form
     position relative
     width 400px

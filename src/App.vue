@@ -1,6 +1,8 @@
 <template>
   <div id="app">
-    <div class="nav"></div>
+    <div class="nav">
+      <h1>PAGE <span>项目可视化组件搭建工具</span></h1>
+    </div>
     <div class="wrapper">
       <router-view/>
     </div>
@@ -29,12 +31,20 @@ export default {
   data () {
     return {
       messageArr: [],
-      showMessage: false
+      showMessage: false,
+      loadingText: ''
     }
   },
 
   watch: {
-    messageArr () {
+    messageArr (val) {
+      this.loadingText = val.length ? val[val.length - 1] : ''
+      if (typeof this.loadingText === 'object') {
+        this.loadingText = JSON.stringify(this.loadingText)
+      }
+      if (this.loadingText.length > 200) {
+        this.loadingText = this.loadingText.substr(0, 200)
+      }
       if (this.$refs.end) {
         this.$refs.end.scrollIntoView(false)
       }
@@ -71,8 +81,19 @@ div
   color #262A30
 
 .nav
+  display flex
+  align-items center
   height 50px
   background-color #4F5159
+  h1
+    margin 0
+    padding 0 10px
+    font-size 24px
+    color: #409EFF
+    font-weight: 400
+    span
+      font-size 12px
+      color #aaa
 .wrapper
   height calc(100% - 70px)
   margin 10px

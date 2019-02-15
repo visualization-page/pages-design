@@ -2,7 +2,7 @@
   <div
     class="home"
     v-loading.fullscreen.lock="fullscreenLoading"
-    element-loading-text="下载模版中，请耐心等待"
+    :element-loading-text="$parent.loadingText"
     element-loading-spinner="el-icon-loading"
   >
     <div class="title">
@@ -25,25 +25,23 @@
             label="项目名称"
           />
           <el-table-column
-            prop="description"
-            label="说明"
-          />
-          <el-table-column
             prop="url"
             width="400px"
             label="项目地址"
           />
           <el-table-column
-            prop="created_at"
-            label="创建时间">
+            prop="updated_at"
+            label="更新时间">
           </el-table-column>
           <el-table-column
             prop="editStatus"
             width="80px"
             label="状态"
           >
-            <template slot-scope="scope">
-              <span :style="{ color: scope.row.isEdit && '#E6A23C' }">{{ scope.row.isEdit ? '编辑中' : '-' }}</span>
+            <template slot-scope="{ row }">
+              <span v-if="row.isEdit" style="color: #E6A23C">编辑中</span>
+              <span v-else-if="row.status === 1" style="color: #67C23A">已构建</span>
+              <span v-else style="color: #999">未构建</span>
             </template>
           </el-table-column>
           <el-table-column
@@ -102,6 +100,7 @@
 </template>
 
 <script>
+import dayjs from 'dayjs'
 import { SOCKET } from '../constant'
 import socket from '../mixins/socket'
 
@@ -146,12 +145,12 @@ export default {
     this.$parent.messageArr = []
 
     // 写cookie
-    // todo 项目状态存redis，构建发布时状态更新
     const records = await this.$http.get('getRecords')
     this.recordsList = records.data.map(x => ({
       ...x,
       isEdit: x.editStatus === 'edit',
-      url: x.status ? x.url.replace('/dist/', '/release/') : x.url
+      url: x.status ? x.url.replace('/dist/', '/release/') : x.url,
+      updated_at: dayjs(x.updated_at).format('YYYY/MM/DD HH:mm')
     }))
 
     const templates = await this.$http.get('getTemplate')
@@ -201,6 +200,7 @@ export default {
         return
       }
       this.$message.success('创建项目成功')
+      this.showInputName = false
       setTimeout(() => {
         this.fullscreenLoading = false
         // this.$parent.toggleMessage()
@@ -211,11 +211,14 @@ export default {
     async delRecord (item) {
       const ok = await this.$confirm('确定要删除吗？', { type: 'warning' })
       if (ok !== 'confirm') return
-      const loading = this.$loading()
+      // const loading = this.$loading()
+      this.$parent.messageArr.push('移除项目文件、删除redis等...')
+      this.fullscreenLoading = true
       await this.$http.post('delRecord', { id: item.id, dirName: item.dir_name })
       const index = this.recordsList.findIndex(x => x.id === item.id)
       this.recordsList.splice(index, 1)
-      loading.close()
+      this.fullscreenLoading = false
+      // loading.close()
     }
   }
 }
