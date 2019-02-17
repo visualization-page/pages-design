@@ -50,6 +50,7 @@
           >
             <template slot-scope="scope">
               <template v-if="!scope.row.isEdit">
+                <el-button size="mini" type="text" @click="addPage(scope.row)">添加页面</el-button>
                 <el-button size="mini" type="text" @click="editRecord(scope.row)">编辑</el-button>
                 <el-button size="mini" type="text" @click="delRecord(scope.row)">删除</el-button>
               </template>
@@ -61,22 +62,28 @@
     </div>
 
     <el-dialog
-      title="选择模版"
+      title="选择编辑页面"
       :visible.sync="dialogVisible"
       width="540px"
     >
-      <div class="template__list">
+      <div class="template__list" v-if="currentProject">
         <div
           class="template__item"
-          v-for="item in templateList"
+          v-for="item in cacheProjectPages[currentProject.id]"
           :key="item.id"
         >
           <div class="template__item--thumb">
-            <img :src="item.thumbnail">
           </div>
-          <p class="template__item--title">{{ item.name }}模版</p>
+          <p class="template__item--title">{{ item.id || item.name }}</p>
           <div class="template__item--btn">
-            <el-button type="primary" plain size="mini" @click="selectTemplate(item)">立即创建</el-button>
+            <el-button
+              type="primary"
+              plain
+              size="mini"
+              @click="toCreate(currentProject, item.id)"
+            >
+              编辑该页面
+            </el-button>
           </div>
         </div>
       </div>
@@ -93,7 +100,13 @@
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
-        <el-button type="primary" size="mini" @click="createProject">确 定</el-button>
+        <el-button
+          type="primary"
+          size="mini"
+          @click="createProject"
+        >
+          确 定
+        </el-button>
       </span>
     </el-dialog>
   </div>
@@ -137,7 +150,9 @@ export default {
           { validator: validate, trigger: 'blur' }
         ]
       },
-      selectedTemplate: null
+      selectedTemplate: null,
+      cacheProjectPages: {},
+      currentProject: null
     }
   },
 
@@ -158,8 +173,24 @@ export default {
   },
 
   methods: {
-    editRecord (item) {
-      this.$router.push(`/project/edit/${item.id}/${item.dir_name}`)
+    async editRecord (item) {
+      if (!this.cacheProjectPages[item.id]) {
+        // 获取项目的页面数量
+        this.loading('获取页面')
+        const res = await this.$http.get('getProjectPages', { dirName: item.dir_name })
+        this.loading(false)
+        this.cacheProjectPages[item.id] = res.data
+      }
+      if (this.cacheProjectPages[item.id].length) {
+        this.dialogVisible = true
+        this.currentProject = item
+      } else {
+        this.toCreate(item)
+      }
+    },
+
+    toCreate (item, pageId) {
+      this.$router.push(`/project/edit/${item.id}/${item.dir_name}${pageId ? `?pageId=${pageId}` : ''}`)
     },
 
     newProject () {
@@ -211,14 +242,27 @@ export default {
     async delRecord (item) {
       const ok = await this.$confirm('确定要删除吗？', { type: 'warning' })
       if (ok !== 'confirm') return
-      // const loading = this.$loading()
-      this.$parent.messageArr.push('移除项目文件、删除redis等...')
-      this.fullscreenLoading = true
+      this.loading('移除项目文件、删除redis等...')
       await this.$http.post('delRecord', { id: item.id, dirName: item.dir_name })
       const index = this.recordsList.findIndex(x => x.id === item.id)
       this.recordsList.splice(index, 1)
-      this.fullscreenLoading = false
-      // loading.close()
+      this.loading(false)
+    },
+
+    async addPage (item) {
+      this.loading('添加页面')
+      await this.$http.post('addProjectPages', { dirName: item.dir_name })
+      this.loading(false)
+      this.$message.success('添加成功')
+    },
+
+    async delPage (dirName, pageId) {
+      this.$http.post('delProjectPages', { dirName, pageId })
+    },
+
+    loading (type = true, text) {
+      text && this.$parent.messageArr.push(text)
+      this.fullscreenLoading = type
     }
   }
 }

@@ -153,6 +153,10 @@ export default {
 
     dirName () {
       return this.$route.params.dirName
+    },
+
+    pageId () {
+      return this.$route.query.pageId
     }
   },
 
@@ -202,7 +206,11 @@ export default {
       this.$refs.pageConfigForm.validate(valid => {
         if (valid) {
           this.fullscreenLoading = true
-          this.socket(SOCKET.SAVE_PAGE_CONFIG, { ...this.pageConfigForm, dirName: this.dirName })
+          this.socket(SOCKET.SAVE_PAGE_CONFIG, {
+            ...this.pageConfigForm,
+            dirName: this.dirName,
+            pageId: this.pageId
+          })
         } else {
           return false
         }
@@ -215,8 +223,6 @@ export default {
 
     publish () {
       this.fullscreenLoading = true
-      // this.$parent.clearMessage()
-      // this.$parent.toggleMessage()
       this.socket(SOCKET.PUBLISH, this.dirName)
     },
 
@@ -224,8 +230,6 @@ export default {
       this.fullscreenLoading = false
       this.$parent.clearMessage()
       this.$message.success('构建成功')
-      // this.$router.back()
-      // this.$parent.toggleMessage()
     },
 
     lookProcess () {
@@ -235,7 +239,7 @@ export default {
     },
 
     getProjectInfo () {
-      this.socket(SOCKET.PROJECT_INFO, this.dirName)
+      this.socket(SOCKET.PROJECT_INFO, { dirName: this.dirName, pageId: this.pageId })
     },
 
     afterProjectInfo ({ components, url, title, bgColor }) {
@@ -276,7 +280,11 @@ export default {
 
     putComponent (item) {
       this.fullscreenLoading = true
-      this.socket(SOCKET.PUT_COMPONENT, { item, dirName: this.dirName })
+      this.socket(SOCKET.PUT_COMPONENT, {
+        item,
+        dirName: this.dirName,
+        pageId: this.pageId
+      })
     },
 
     afterPutComponent (item) {
@@ -288,7 +296,7 @@ export default {
     saveEditor () {
       this.socket(SOCKET.UPDATE_COMPONENT, {
         dirName: this.dirName,
-        // props: this.editorInstance.getValue(),
+        pageId: this.pageId,
         props: this.$refs.schema.getValue(),
         componentId: this.selectedComponent.id
       })
@@ -301,7 +309,11 @@ export default {
     },
 
     delComponent (item) {
-      this.socket(SOCKET.DEL_COMPONENT, { dirName: this.dirName, componentId: item.id })
+      this.socket(SOCKET.DEL_COMPONENT, {
+        dirName: this.dirName,
+        pageId: this.pageId,
+        componentId: item.id
+      })
     },
 
     afterDelComponents ({ componentId, components }) {
@@ -314,7 +326,11 @@ export default {
 
     dragEnd (data) {
       this.templateComponents = data
-      this.socket(SOCKET.UPDATE_COMPONENT_SORT, { data, dirName: this.dirName })
+      this.socket(SOCKET.UPDATE_COMPONENT_SORT, {
+        pageId: this.pageId,
+        data,
+        dirName: this.dirName
+      })
     },
 
     checkProjectTemplateAndComponentVersion () {
