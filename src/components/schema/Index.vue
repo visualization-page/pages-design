@@ -37,9 +37,9 @@
           :is-link="properties[field].isLink"
           v-model="mapData[field]"
         >
-          <schema-input
+          <schema-select-link
             v-if="properties[field].isLink"
-            :is-link="properties[field].isLink"
+            :field-data="properties[field]"
             v-model="mapData[field]"
           />
         </schema-select>
@@ -80,6 +80,7 @@
 <script>
 import FormatImage from './SchemaBlockImage'
 import SchemaSelect from './SchemaSelect'
+import SchemaSelectLink from './SchemaSelectLink'
 import SchemaInput from './SchemaInput'
 import SchemaInputNumber from './SchemaInputNumber'
 import SchemaColor from './SchemaColor'
@@ -99,7 +100,13 @@ export default {
   },
 
   props: {
-    schema: Object
+    schema: Object,
+    getAsyncData: {
+      type: Function,
+      default() {
+        return new Function()
+      }
+    }
   },
 
   mixins: [formatType, resource],
@@ -108,6 +115,7 @@ export default {
     FormatImage,
     SchemaInput,
     SchemaSelect,
+    SchemaSelectLink,
     SchemaColor,
     SchemaImage,
     Resource,

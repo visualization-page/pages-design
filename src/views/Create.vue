@@ -84,6 +84,7 @@
           v-if="selectedComponent"
           ref="schema"
           :schema="selectedComponent.schema"
+          :get-async-data="getSchemaAsyncData"
         />
         <!--<div ref="editor" id="editor__holder"></div>-->
         <div class="project__block--btn">
@@ -353,8 +354,18 @@ export default {
         behavior: 'smooth',
         block: 'start'
       })
-      componentsElem.childNodes.forEach(item => item.style.boxShadow = '')
+      componentsElem.childNodes.forEach(item => { item.style.boxShadow = '' })
       componentsElem.childNodes[itemIndex].style.boxShadow = '0 0 10px red'
+    },
+
+    getSchemaAsyncData (key) {
+      if (key === 'innerPageLink') {
+        const res = localStorage.getItem(`page_${this.pageId || 0}`)
+        return Promise.resolve(JSON.parse(res).map(x => ({
+          label: x.name || x.id,
+          value: x.id === 0 ? '/' : `/${x.value}`
+        })))
+      }
     }
   }
 }

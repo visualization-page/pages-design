@@ -50,7 +50,6 @@
           >
             <template slot-scope="scope">
               <template v-if="!scope.row.isEdit">
-                <el-button size="mini" type="text" @click="addPage(scope.row)">添加页面</el-button>
                 <el-button size="mini" type="text" @click="editRecord(scope.row)">编辑</el-button>
                 <el-button size="mini" type="text" @click="delRecord(scope.row)">删除</el-button>
               </template>
@@ -62,7 +61,7 @@
     </div>
 
     <el-dialog
-      title="选择编辑页面"
+      title="编辑页面"
       :visible.sync="dialogVisible"
       width="540px"
     >
@@ -72,9 +71,7 @@
           v-for="item in cacheProjectPages[currentProject.id]"
           :key="item.id"
         >
-          <div class="template__item--thumb">
-          </div>
-          <p class="template__item--title">{{ item.id || item.name }}</p>
+          <p class="template__item--title">{{ item.name || item.id }}</p>
           <div class="template__item--btn">
             <el-button
               type="primary"
@@ -82,11 +79,29 @@
               size="mini"
               @click="toCreate(currentProject, item.id)"
             >
-              编辑该页面
+              编辑
+            </el-button>
+            <el-button
+              v-if="item.id"
+              type="danger"
+              plain
+              size="mini"
+              @click="delPage(currentProject.dir_name, item.id)"
+            >
+              删除
             </el-button>
           </div>
         </div>
       </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button
+          type="primary"
+          size="mini"
+          @click="addPage(currentProject)"
+        >
+          新建页面
+        </el-button>
+      </span>
     </el-dialog>
 
     <el-dialog
@@ -180,16 +195,18 @@ export default {
         const res = await this.$http.get('getProjectPages', { dirName: item.dir_name })
         this.loading(false)
         this.cacheProjectPages[item.id] = res.data
+        this.cacheProjectPages[item.id].unshift({ id: 0, name: '首页' })
       }
-      if (this.cacheProjectPages[item.id].length) {
-        this.dialogVisible = true
-        this.currentProject = item
-      } else {
-        this.toCreate(item)
-      }
+      // if (this.cacheProjectPages[item.id].length) {
+      this.dialogVisible = true
+      this.currentProject = item
+      // } else {
+      //   this.toCreate(item)
+      // }
     },
 
     toCreate (item, pageId) {
+      localStorage.setItem(`page_${pageId}`, JSON.stringify(this.cacheProjectPages[item.id]))
       this.$router.push(`/project/edit/${item.id}/${item.dir_name}${pageId ? `?pageId=${pageId}` : ''}`)
     },
 
@@ -257,7 +274,12 @@ export default {
     },
 
     async delPage (dirName, pageId) {
-      this.$http.post('delProjectPages', { dirName, pageId })
+      const ok = await this.$confirm('确定要删除吗？', { type: 'warning' })
+      if (ok !== 'confirm') return
+      this.loading('删除页面')
+      await this.$http.post('delProjectPages', { dirName, pageId })
+      this.loading(false)
+      this.$message.success('删除成功')
     },
 
     loading (type = true, text) {
@@ -278,10 +300,15 @@ export default {
   .template
     &__list
       display flex
-      justify-content space-between
+      // justify-content space-between
+      flex-direction column
     &__item
-      width 240px
-      height 380px
+      display flex
+      justify-content space-between
+      align-items center
+      margin-bottom 10px
+      // width 240px
+      // height 380px
       box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10)
       border-radius: 4px
       overflow: hidden
