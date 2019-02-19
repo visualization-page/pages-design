@@ -6,7 +6,7 @@ import store from './store'
 import Http from 'xm-mui/lib/http'
 import './plugins/element.js'
 
-const base = `${location.protocol}//${location.hostname}:7001`
+const base = `http://${location.hostname}:7001`
 Vue.use(new VueSocketio({
   // debug: true,
   connection: base
