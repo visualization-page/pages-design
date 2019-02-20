@@ -10,20 +10,20 @@
 </template>
 
 <script>
-  export default {
-    name: 'schema-input',
+export default {
+  name: 'schema-input',
 
-    props: {
-      label: String,
-      value: String
-    },
+  props: {
+    label: String,
+    value: String
+  },
 
-    data () {
-      return {
-      }
-    },
-
-    created () {
+  data () {
+    return {
     }
+  },
+
+  created () {
   }
+}
 </script>

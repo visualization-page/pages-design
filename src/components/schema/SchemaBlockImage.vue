@@ -65,7 +65,7 @@ export default {
   },
 
   watch: {
-    local(val) {
+    local (val) {
       this.$emit('input', val)
     }
   },

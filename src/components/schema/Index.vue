@@ -103,7 +103,7 @@ export default {
     schema: Object,
     getAsyncData: {
       type: Function,
-      default() {
+      default () {
         return new Function()
       }
     }

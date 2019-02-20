@@ -21,7 +21,7 @@ Vue.prototype.$http = new Http({
     delRecord: '/delRecord',
     getProjectPages: '/records/pages',
     addProjectPages: '/records/pages/add',
-    delProjectPages: '/records/pages/del',
+    delProjectPages: '/records/pages/del'
   },
   timeout: 600000
 })

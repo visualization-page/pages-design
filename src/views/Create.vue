@@ -113,6 +113,7 @@ import draggable from 'vuedraggable'
 import { SOCKET } from '../constant'
 import socket from '../mixins/socket'
 import Schema from '../components/schema/Index'
+import checkUserLeave from '../mixins/checkUserLeave'
 
 export default {
   name: 'project',
@@ -145,7 +146,7 @@ export default {
     }
   },
 
-  mixins: [socket],
+  mixins: [socket, checkUserLeave],
 
   computed: {
     isEdit () {
